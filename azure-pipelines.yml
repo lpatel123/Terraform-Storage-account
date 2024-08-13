@@ -1,0 +1,78 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+steps:
+- script: echo Hello, world!
+  displayName: 'Run a one-line script'
+
+- script: |
+    echo Add other tasks to build, test, and deploy your project.
+    echo See https://aka.ms/yaml
+  displayName: 'Run a multi-line script'
+stages:
+
+- stage: Install_Terraform_Software
+  displayName: Prepare Terraform and validate code
+  jobs:
+  - job:
+    displayName: Install Terraform Software
+    steps:
+      - task: TerraformInstaller@1
+        displayName: tfinstall
+        inputs:
+          terraformVersion: 'latest'
+      - task: TerraformTaskV4@4
+        displayName: init
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          backendServiceArm: $(terraformspn)
+          backendAzureRmResourceGroupName: $(trg)
+          backendAzureRmStorageAccountName: $(tstorage)
+          backendAzureRmContainerName: $(tcontainer)
+          backendAzureRmKey: $(key)
+      - task: TerraformTaskV4@4
+        displayName: validate
+        inputs:
+          provider: 'azurerm'
+          command: 'validate'
+
+- stage: terraform_plan
+  displayName: Terraform apply
+  dependsOn: Install_Terraform_Software
+  jobs:
+    - job: apply
+      steps:      
+        - task: TerraformTaskV4@4
+          displayName: init
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: $(terraformspn)
+            backendAzureRmResourceGroupName: $(trg)
+            backendAzureRmStorageAccountName: $(tstorage)
+            backendAzureRmContainerName: $(tcontainer)
+            backendAzureRmKey: $(key)
+        - task: TerraformTaskV4@4
+          displayName: plan
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            commandOptions: '-var-file="dev.tfvars"'
+            environmentServiceNameAzureRM: $(terraformspn)
+        - task: TerraformTaskV4@4
+          displayName: apply
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            commandOptions: '-var-file="dev.tfvars"'
+            environmentServiceNameAzureRM: $(terraformspn)
+           
