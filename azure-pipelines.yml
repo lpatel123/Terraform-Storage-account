@@ -5,18 +5,10 @@
 
 trigger:
 - main
-
+- none
 pool:
   vmImage: ubuntu-latest
 
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
 stages:
 
 - stage: Install_Terraform_Software
@@ -34,17 +26,16 @@ stages:
         inputs:
           provider: 'azurerm'
           command: 'init'
-          backendServiceArm: $(terraformspn)
-          backendAzureRmResourceGroupName: $(trg)
-          backendAzureRmStorageAccountName: $(tstorage)
-          backendAzureRmContainerName: $(tcontainer)
-          backendAzureRmKey: $(key)
+          backendServiceArm: 'terraform-spn'
+          backendAzureRmResourceGroupName: 'Terraform-RG'
+          backendAzureRmStorageAccountName: 'terraformstorageewe'
+          backendAzureRmContainerName: 'terraform-state'
+          backendAzureRmKey: 'dev-terraform-state'
       - task: TerraformTaskV4@4
         displayName: validate
         inputs:
           provider: 'azurerm'
           command: 'validate'
-
 - stage: terraform_plan
   displayName: Terraform apply
   dependsOn: Install_Terraform_Software
@@ -52,27 +43,25 @@ stages:
     - job: apply
       steps:      
         - task: TerraformTaskV4@4
-          displayName: init
           inputs:
             provider: 'azurerm'
             command: 'init'
-            backendServiceArm: $(terraformspn)
-            backendAzureRmResourceGroupName: $(trg)
-            backendAzureRmStorageAccountName: $(tstorage)
-            backendAzureRmContainerName: $(tcontainer)
-            backendAzureRmKey: $(key)
+            backendServiceArm: 'terraform-spn'
+            backendAzureRmResourceGroupName: 'Terraform-RG'
+            backendAzureRmStorageAccountName: 'terraformstorageewe'
+            backendAzureRmContainerName: 'terraform-state'
+            backendAzureRmKey: 'dev-terraform-state'
         - task: TerraformTaskV4@4
           displayName: plan
           inputs:
             provider: 'azurerm'
             command: 'plan'
             commandOptions: '-var-file="dev.tfvars"'
-            environmentServiceNameAzureRM: $(terraformspn)
+            environmentServiceNameAzureRM: 'terraform-spn'
         - task: TerraformTaskV4@4
           displayName: apply
           inputs:
             provider: 'azurerm'
             command: 'apply'
             commandOptions: '-var-file="dev.tfvars"'
-            environmentServiceNameAzureRM: $(terraformspn)
-           
+            environmentServiceNameAzureRM: 'terraform-spn'
